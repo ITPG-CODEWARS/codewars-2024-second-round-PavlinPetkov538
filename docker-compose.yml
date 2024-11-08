@@ -1,0 +1,45 @@
+services:
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: sqlserver
+    environment:
+      SA_PASSWORD: "YourStrong@Passw0rd"
+      ACCEPT_EULA: "Y"
+    ports:
+      - "1434:1434"
+    networks:
+      - codewars-network
+    volumes:
+      - sqlserver_data:/var/opt/mssql # Persist database data
+
+  client:
+    build:
+      context: ./Frontend
+      dockerfile: Dockerfile
+    container_name: client
+    ports:
+      - "3000:3000"
+    stdin_open: true
+    tty: true
+
+  api:
+    build:
+      context: ./Backend
+      dockerfile: Dockerfile
+    ports:
+      - "5000:80"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=CodewarsDB;User Id=sa;Password=YourStrong@Passw0rd;MultipleActiveResultSets=true;Encrypt=False
+    networks:
+      - codewars-network
+    depends_on:
+      - sqlserver
+  
+networks:
+  codewars-network:
+    driver: bridge
+
+volumes:
+  sqlserver_data:
+    driver: local
